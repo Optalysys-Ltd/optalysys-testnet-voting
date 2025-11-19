@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as simpleSol from "./Simple.sol";
+export { FHECounter__factory } from "./FHECounter__factory";

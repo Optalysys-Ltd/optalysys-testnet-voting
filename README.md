@@ -6,7 +6,7 @@
 
 1. Generate an Ethereum compatible private key.
 2. Give Optalysys the address derived from your private key and request testnet Eth to be allocated.
-3. Request the JSON RPC URL, relayer URL, gateway chain ID, ACL contract address, FHEVM executor contract address, KMS verifier contract address, decryption oracle contract address, input verifier contract address, input verification contract address and decryption contract address from Optalysys. These can be found in the file `testnet_config.json` within this repo.
+3. Request the JSON RPC URL, relayer URL, gateway chain ID, ACL contract address, FHEVM executor contract address, KMS verifier contract address, decryption oracle contract address, input verifier contract address, input verification contract address and decryption contract address from Optalysys. These can be found in the file `testnet_config.json` or `testnet_blue.json` within this repo.
 4. Write an FHE smart contract using [Zama's Solidity docs](https://docs.zama.ai/protocol/solidity-guides/smart-contract/configure) (but with **config explicitly set to use the addresses provided by Optalysys, not Zama's config for Sepolia** - as the addresses are of course different). Use [Zama's Solidity library](https://www.npmjs.com/package/@fhevm/solidity) at version v0.8.0 (other versions may work, but currently the server side of Optalysys' testnet uses versions of Zama's stack known to be compatible with v0.8.0).
 4. Deploy your smart contract using your method of choice through the JSON RPC URL provided by Optalysys in step 3 using you private key that was funded in step 2 to sign the transaction. See the [Ethereum documentation on deploying smart contracts](https://ethereum.org/developers/docs/smart-contracts/deploying/) if you don't know how to do this.
 5. Interact with your contract using your method of choice and create encrypted inputs to send to it / request decryptions using [Zama's relayer SDK](https://www.npmjs.com/package/@zama-fhe/relayer-sdk) at version v0.2.0 (other versions may work, but the current version of Zama's relayer run on Optalysys' testnet is known to be compatible with v0.2.0) - using the details provided by Optalysys in step 3 to initialise the relayer SDK.
@@ -25,25 +25,20 @@ It is recommended to run this guide in a container, to avoid the [it works on my
 
 Follow the instructions for [installing Docker on your machine](https://docs.docker.com/engine/install/). Alternatively, install pnpm directly on your machine.
 
-After you have Docker installed you can start an Ubuntu container with this Docker command.
+
+#### Dockerfile
+
+The Dockerfile contains instructions to build a Ubuntu Docker container with node and pnpm.
+
+> If your company uses a proxy, you will need to [add their CA certificates to the Dockerfile](https://docs.docker.com/engine/network/ca-certs/#add-ca-certificates-to-linux-images-and-containers) to ensure commands like `apt` and `pnpm install` work. The commented-out sections in the `Dockerfile` have an example of this.
+
+After you have Docker installed you can start an Ubuntu container with this Docker command. This builds the Dockerfile and tags it `testnet-pnpm-ubuntu`, and then runs the Docker container.
+
 ```bash
-docker run --hostname docker-ubuntu -it --rm -v .:/home/ubuntu/guide --workdir /home/ubuntu/guide --user 1000:1000 ubuntu:latest bash
+docker build -t testnet-pnpm-ubuntu . && docker run --hostname testnet-pnpm-ubuntu -it --rm -v .:/home/node/guide --workdir /home/node/guide testnet-pnpm-ubuntu bash
 ```
 
-> All commands in the rest of this guide will assume they are being run from within this container or another equivalent environment you have setup.
-
-The following commands will be run inside the Docker container. Make sure the shell prompt shows `ubuntu@docker-ubuntu:~/guide#` which means you are running the Docker container's shell.
-
-> If your company uses a proxy, you will need to [add their CA certificates to the container](https://docs.docker.com/engine/network/ca-certs/#add-ca-certificates-to-linux-images-and-containers) to ensure commands like `apt` and `pnpm install` work.
-
-These commands downloads `wget`, downloads the and runs `pnpm` installer, sources the `pnpm` env variables and downloads the NodeJS binary.
-
-```
-apt update && apt upgrade -y && apt install -y wget
-wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash -
-source $HOME/.bashrc
-pnpm env use --global lts
-```
+The following commands will be run inside the Docker container. Make sure the shell prompt shows `node@testnet-pnpm-ubuntu:~/guide$` which means you are running the Docker container's shell.
 
 ### Install Dependencies
 
@@ -57,6 +52,8 @@ pnpm install
 
 - **Either** [generate a new Ethereum compatible private key](#generate-a-new-ethereum-compatible-private-key)
 - **Or** [import an existing Ethereum compatible private key](#import-an-existing-ethereum-compatible-private-key)
+
+Your wallet will persist in the private key JSON file.
 
 #### Generate a new Ethereum compatible private key
 
@@ -78,6 +75,19 @@ Set the environment variable `PRIVATE_KEY` to your private key.
 pnpm hardhat task:accountImport --key-file key.json
 ```
 
+### Check your wallet ETH balance on the testnet
+
+```bash
+pnpm hardhat task:getBalance --key-file key.json --config-file testnet_config.json 
+2025-10-24T14:03:35.875Z :: Loading wallet
+Set WALLET_PASSWORD env var to skip this prompt
+Enter password for wallet: 
+2025-10-24T14:03:39.070Z :: Loading testnet config
+2025-10-24T14:03:39.072Z :: Connecting provider
+2025-10-24T14:03:39.094Z :: Requesting balance
+2025-10-24T14:03:39.316Z :: Balance for wallet 0x7Cc412E67f88ba0CBC6F5C28279E4e5c79c2aEd9: 0.999997600761205446 ETH
+```
+
 ### Request funds and details on the testnet from Optalysys
 
 Get the address from your private key
@@ -91,7 +101,6 @@ Send this to Optalysys requesting funds on the testnet.
 **You will not be able to interact with contracts on the testnet without funds**
 
 > Once you have the above you can start deploying smart contracts to the testnet that use FHE and interacting with them. The rest of this guide walks through deploying a simple test contract and interacting with it.
-
 
 ### Deploy a Simple Contract
 
@@ -252,7 +261,12 @@ pnpm run test-localhost
 This will deploy the test on the hardhat localhost and run through the contract methods
 
 
-## Using Optalysys testnet config instead of Zama's config
+## Deploying your own contracts by using Optalysys testnet config instead of Zama's config
+This assumes you have knowledge of JavaScript and smart contracts. Follow [Zama's Quick Start tutorial](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial)
+
+The file [./tasks/contract.ts](./tasks/contract.ts) contains a deployment script. You can adapt this to deploy your own contract.
+
+Zama has some example contracts [here](https://docs.zama.ai/protocol/examples).
 
 This is where the instructions diverge from [Zama's instructions](https://docs.zama.ai/protocol/solidity-guides/smart-contract/configure).
 
@@ -311,3 +325,125 @@ await contractFactory.deploy(
   ethers.getAddress(testnetConfig.decryptionOracleContractAddress),
 );
 ```
+
+Run `pnpm hardhat compile` to [generate TypeScript types](https://docs.zama.ai/protocol/solidity-guides/getting-started/quick-start-tutorial/write_a_simple_contract#compile-counter.sol)
+
+### Example converting Zama's FHE Counter contract
+Get the FHE Counter files from [here](https://docs.zama.ai/protocol/examples#fhecounter.sol).
+
+The FHE Counter files have been put into the project at [contracts/FHECounter.sol](contracts/FHECounter.sol) and [test/FHECounter.test.ts](test/FHECounter.test.ts) (test only runs on hardhat localhost). Note how the constructor has been modified following the instructions in "Deploying your own contracts by using Optalysys testnet config instead of Zama's config".
+
+
+Compile the contracts to create the TypeScript types:
+
+```bash
+pnpm hardhat compile
+Downloading compiler 0.8.24
+Generating typings for: 9 artifacts in dir: typechain-types for target: ethers-v6
+Compiled 6 Solidity files successfully (evm target: cancun).
+
+ls typechain-types/contracts/
+FHECounter.ts  index.ts  Simple.sol
+```
+
+Now the TypeScript types have been generated and can be imported for hardhat tasks and tests.
+
+Take a look at [tasks/fhecounter.ts](tasks/fhecounter.ts) which have been written for the user to interact with the smart contract by calling Hardhat tasks.
+
+First deploy the contract
+
+```bash
+pnpm hardhat task:deployFheCounter --config-file testnet_config.json --address-file fhe_counter.address --key-file key.json 
+2025-10-28T14:25:31.413Z :: Loading wallet
+Set WALLET_PASSWORD env var to skip this prompt
+Enter password for wallet: 
+2025-10-28T14:25:32.686Z :: Loading testnet config
+2025-10-28T14:25:32.687Z :: Connecting wallet
+2025-10-28T14:25:32.699Z :: Deploying contract
+2025-10-28T14:25:34.745Z :: Waiting for deployment...
+2025-10-28T14:25:44.146Z :: Contract deployed at block: 97020
+2025-10-28T14:25:44.146Z :: Contract address: 0x0Bfea07384337E0081Ee14A88b4F3CCB20FCE02D
+2025-10-28T14:25:44.146Z :: Contract address written to file: fhe_counter.address
+```
+
+Encrypt the value to increment the counter by (here it's set to 4) and save it to `--input-file`
+
+```bash
+pnpm hardhat task:incrementFheCounter --input 4 --input-file inputs.json --config-file testnet_config.json --address-file fhe_counter.address --key-file key.json 
+2025-10-28T14:27:44.527Z :: Loading wallet
+Set WALLET_PASSWORD env var to skip this prompt
+Enter password for wallet: 
+2025-10-28T14:27:46.010Z :: Loading contract address
+2025-10-28T14:27:46.010Z :: Loading testnet config
+2025-10-28T14:27:46.011Z :: Instantiating fhevm instance
+2025-10-28T14:27:46.011Z :: {
+  verifyingContractAddressDecryption: '0x2a4c38464aaB36c448b373D55fEA7A9827bF6E9f',
+  verifyingContractAddressInputVerification: '0x94baae27C5F3f647C31a5a7d863701C08736E797',
+  inputVerifierContractAddress: '0x5D85721B3014c6ecDC8eF018d3E86Ca663639370',
+  kmsContractAddress: '0x5A8ac1C8D2a8f163D875ed32bbf4FF1C530d4550',
+  aclContractAddress: '0x053dC8674A6F4817d3AC01C89FbE573024f681C4',
+  gatewayChainId: '678259798',
+  relayerUrl: 'https://relayer.gcp-testnet-eth.dev.optalysys.com',
+  network: 'https://rpc.gcp-testnet-eth.dev.optalysys.com'
+}
+2025-10-28T14:27:52.631Z :: Encrypting...
+2025-10-28T14:29:00.535Z :: Input encrypted
+2025-10-28T14:29:00.536Z :: Encrypted input and ZK proof written to: inputs.json
+```
+
+Call the contract's `increment` call with the encrypted input and ZK proof created in the previous step:
+
+```bash
+pnpm hardhat task:callIncrementFheCounter --input-file inputs.json --config-file testnet_config.json --address-file fhe_counter.address --key-file key.json 
+2025-10-28T14:29:07.007Z :: Loading wallet
+Set WALLET_PASSWORD env var to skip this prompt
+Enter password for wallet: 
+2025-10-28T14:29:07.927Z :: Loading contract address
+2025-10-28T14:29:07.927Z :: Loading testnet config
+2025-10-28T14:29:07.928Z :: Loading encrypted input and zkproof
+2025-10-28T14:29:07.928Z :: Connecting wallet
+2025-10-28T14:29:07.937Z :: Connecting to contract
+2025-10-28T14:29:07.938Z :: Calling increment on contract
+2025-10-28T14:29:10.313Z :: Transaction hash: 0xffaf4ad8bb1042da36ba835b2c871e5bcec7569597eaf4727a27e38ed8c0990b
+2025-10-28T14:29:10.313Z :: Waiting for transaction to be included in block...
+2025-10-28T14:29:19.365Z :: Transaction receipt received. Block number: 97056
+```
+
+Decrypt the counter. Note that the value of the counter has incremented by the value you have set.
+
+```bash
+pnpm hardhat task:decryptFheCounter --config-file testnet_config.json --address-file fhe_counter.address --key-file key.json 
+2025-10-28T14:29:26.212Z :: Loading wallet
+Set WALLET_PASSWORD env var to skip this prompt
+Enter password for wallet: 
+2025-10-28T14:29:27.371Z :: Loading contract address
+2025-10-28T14:29:27.372Z :: Loading testnet config
+2025-10-28T14:29:27.372Z :: Instantiating fhevm instance
+2025-10-28T14:29:27.372Z :: {
+  verifyingContractAddressDecryption: '0x2a4c38464aaB36c448b373D55fEA7A9827bF6E9f',
+  verifyingContractAddressInputVerification: '0x94baae27C5F3f647C31a5a7d863701C08736E797',
+  inputVerifierContractAddress: '0x5D85721B3014c6ecDC8eF018d3E86Ca663639370',
+  kmsContractAddress: '0x5A8ac1C8D2a8f163D875ed32bbf4FF1C530d4550',
+  aclContractAddress: '0x053dC8674A6F4817d3AC01C89FbE573024f681C4',
+  gatewayChainId: '678259798',
+  relayerUrl: 'https://relayer.gcp-testnet-eth.dev.optalysys.com',
+  network: 'https://rpc.gcp-testnet-eth.dev.optalysys.com'
+}
+2025-10-28T14:29:35.748Z :: Connecting wallet
+2025-10-28T14:29:35.761Z :: Connecting to contract
+2025-10-28T14:29:35.763Z :: Calling getCount on contract to get ciphertext handle
+2025-10-28T14:29:36.055Z :: Requesting decryption...
+2025-10-28T14:29:36.055Z :: Generating keypair...
+2025-10-28T14:29:36.059Z :: Creating EIP712...
+2025-10-28T14:29:36.060Z :: Sign typed data...
+2025-10-28T14:29:36.068Z :: User decrypt...
+{
+  '0x87b108a987087e1917a5163710ea79247e87cb5b83ff00000000286d6c560400': 4n
+}
+2025-10-28T14:30:00.035Z :: Result: 4
+2025-10-28T14:30:00.035Z :: Decrypted count: 4
+```
+
+#### Your tasks
+
+Implement hardhat tasks for **decrementing** FHE Counter by following and adapting the examples provided for incrementing.

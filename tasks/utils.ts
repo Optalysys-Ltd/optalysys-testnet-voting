@@ -1,5 +1,5 @@
 import * as fs from "fs"
-import { ethers } from 'ethers'
+import { ethers, HDNodeWallet } from 'ethers'
 import createPrompt from 'prompt-sync'
 import { FhevmInstance, FhevmInstanceConfig, createInstance as createFhevmInstance } from "@zama-fhe/relayer-sdk/node"
 
@@ -67,4 +67,60 @@ export async function loadTestnetConfig(configFile: string): Promise<TestnetConf
     inputVerificationContractAddress: testnetConfigRaw.input_verification_contract_address,
     decryptionContractAddress: testnetConfigRaw.decryption_contract_address
   }
+}
+
+export async function setupUserDecrypt(instance: FhevmInstance, signer: HDNodeWallet, ciphertextHandle: string, contractAddress: string): Promise<string | bigint | boolean> {
+  // instance: [`FhevmInstance`] from `zama-fhe/relayer-sdk`
+  // signer: [`Signer`] from ethers (could a [`Wallet`])
+  // ciphertextHandle: [`string`]
+  // contractAddress: [`string`]
+
+  timestampLog("Generating keypair...")
+
+  const keypair = instance.generateKeypair();
+  const handleContractPairs = [
+    {
+      handle: ciphertextHandle,
+      contractAddress: contractAddress,
+    },
+  ];
+  const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+  const durationDays = '10'; // String for consistency
+  const contractAddresses = [contractAddress];
+
+  timestampLog("Creating EIP712...")
+  const eip712 = instance.createEIP712(
+    keypair.publicKey,
+    contractAddresses,
+    startTimeStamp,
+    durationDays,
+  );
+
+  timestampLog("Sign typed data...")
+
+  const signature = await signer.signTypedData(
+    eip712.domain,
+    {
+      UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification,
+    },
+    eip712.message,
+  );
+
+  timestampLog("User decrypt...")
+
+  const result = await instance.userDecrypt(
+    handleContractPairs,
+    keypair.privateKey,
+    keypair.publicKey,
+    signature.replace('0x', ''),
+    contractAddresses,
+    signer.address,
+    startTimeStamp,
+    durationDays,
+  );
+  console.log(result);
+
+  const decryptedValue = result[ciphertextHandle];
+  timestampLog("Result: " + decryptedValue);
+  return decryptedValue;
 }

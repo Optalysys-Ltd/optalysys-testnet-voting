@@ -3,3 +3,4 @@
 /* eslint-disable */
 import type * as simpleSol from "./Simple.sol";
 export type { simpleSol };
+export type { FHECounter } from "./FHECounter";

@@ -3,8 +3,7 @@ import { HardhatFhevmRuntimeEnvironment } from "@fhevm/hardhat-plugin";
 import { expect } from "chai";
 import { ethers, fhevm as mockFhevm } from "hardhat";
 import { createInstance, loadTestnetConfig, loadWallet, timestampLog } from "../tasks/utils";
-import { JsonRpcProvider } from "ethers";
-import { HDNodeWallet } from "ethers";
+import { JsonRpcProvider, HDNodeWallet } from "ethers";
 import { FhevmInstance } from "@zama-fhe/relayer-sdk/node";
 
 
