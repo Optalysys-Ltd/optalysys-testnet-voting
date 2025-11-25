@@ -18,6 +18,8 @@ export type { IFHEVMExecutor } from "./@fhevm/solidity/lib/Impl.sol/IFHEVMExecut
 export { IFHEVMExecutor__factory } from "./factories/@fhevm/solidity/lib/Impl.sol/IFHEVMExecutor__factory";
 export type { IInputVerifier } from "./@fhevm/solidity/lib/Impl.sol/IInputVerifier";
 export { IInputVerifier__factory } from "./factories/@fhevm/solidity/lib/Impl.sol/IInputVerifier__factory";
+export type { EncryptedVoting } from "./contracts/EncryptedVoting";
+export { EncryptedVoting__factory } from "./factories/contracts/EncryptedVoting__factory";
 export type { FHECounter } from "./contracts/FHECounter";
 export { FHECounter__factory } from "./factories/contracts/FHECounter__factory";
 export type { Test } from "./contracts/Simple.sol/Test";

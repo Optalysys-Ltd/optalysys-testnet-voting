@@ -3,4 +3,5 @@
 /* eslint-disable */
 import type * as simpleSol from "./Simple.sol";
 export type { simpleSol };
+export type { EncryptedVoting } from "./EncryptedVoting";
 export type { FHECounter } from "./FHECounter";

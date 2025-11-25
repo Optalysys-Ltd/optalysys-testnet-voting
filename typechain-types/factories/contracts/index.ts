@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as simpleSol from "./Simple.sol";
+export { EncryptedVoting__factory } from "./EncryptedVoting__factory";
 export { FHECounter__factory } from "./FHECounter__factory";

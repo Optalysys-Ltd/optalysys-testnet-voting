@@ -52,3 +52,7 @@ Thumbs.db
 key*.json
 *inputs*.json
 *.sw?
+
+fhevmTemp
+artifacts
+cache
